@@ -81,6 +81,7 @@ class Content_Type {
 		'rewrite'            => array(
 			'slug' => 'collections', // We're giving the post type a rewrite but not the taxonomy. I dont expect this will receive anything but internal traffic for right now.
 		),
+		'taxonomies'         => array( '_post_visibility' ),
 		'capability_type'    => 'post',
 		'has_archive'        => true,
 		'hierarchical'       => true,
