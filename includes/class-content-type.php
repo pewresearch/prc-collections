@@ -141,6 +141,8 @@ class Content_Type {
 		$loader->add_filter( 'prc_platform_pub_listing_default_args', $this, 'opt_into_pub_listing' );
 		$loader->add_action( 'pre_get_posts', $this, 'filter_self_reference_out', 100, 1 );
 		$loader->add_filter( 'prc_platform__art_direction_enabled_post_types', $this, 'enable_art_direction_support' );
+		$loader->add_filter( 'prc_sitemap_supported_post_types', $this, 'opt_into_sitemap', 10, 1 );
+		$loader->add_action( 'prc_platform_on_publish', $this, 'set_default_post_visibility', 10, 1 );
 	}
 
 	/**
@@ -256,6 +258,19 @@ class Content_Type {
 	}
 
 	/**
+	 * Opt into sitemap.
+	 *
+	 * @hook prc_sitemap_supported_post_types
+	 *
+	 * @param array $post_types The post types.
+	 * @return array The post types.
+	 */
+	public function opt_into_sitemap( $post_types ) {
+		$post_types[] = self::$post_object_name;
+		return $post_types;
+	}
+
+	/**
 	 * Enable art direction support.
 	 *
 	 * @hook prc_platform__art_direction_enabled_post_types
@@ -266,5 +281,28 @@ class Content_Type {
 	public function enable_art_direction_support( $post_types ) {
 		$post_types[] = self::$post_object_name;
 		return $post_types;
+	}
+
+	/**
+	 * Set default _post_visibility taxonomy term to 'hidden-on-index' for new collections posts.
+	 *
+	 * @hook prc_platform_on_post_init
+	 *
+	 * @param WP_Post $post Post object.
+	 */
+	public function set_default_post_visibility( $post ) {
+		// Only for 'collections' post type.
+		if ( self::$post_object_name !== $post->post_type ) {
+			return;
+		}
+
+		// Only set if no terms are set yet.
+		$current_terms = wp_get_object_terms( $post->ID, '_post_visibility', array( 'fields' => 'ids' ) );
+		if ( ! empty( $current_terms ) || is_wp_error( $current_terms ) ) {
+			return;
+		}
+
+		// Set the default term.
+		wp_set_object_terms( $post->ID, 'hidden-on-index', '_post_visibility', false );
 	}
 }
