@@ -1,7 +1,7 @@
 {
-    "name": "@pewresearch/prc-collections",
+    "name": "@prc/collections",
     "version": "1.0.0",
-    "description": "Provides a module for PRC Platform that...",
+    "description": "PRC Collections is a module for PRC Platform that...",
     "scripts": {
         "test": "wp-scripts test-playwright",
         "test:env:start": "wp-env start",
