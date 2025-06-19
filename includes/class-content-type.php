@@ -140,6 +140,7 @@ class Content_Type {
 		$loader->add_filter( 'default_wp_template_part_areas', $this, 'kicker_template_areas', 11, 1 );
 		$loader->add_filter( 'prc_platform_pub_listing_default_args', $this, 'opt_into_pub_listing' );
 		$loader->add_action( 'pre_get_posts', $this, 'filter_self_reference_out', 100, 1 );
+		$loader->add_filter( 'prc_platform__bylines_enabled_post_types', $this, 'opt_into_bylines', 10, 1 );
 		$loader->add_filter( 'prc_platform__art_direction_enabled_post_types', $this, 'enable_art_direction_support' );
 		$loader->add_filter( 'prc_sitemap_supported_post_types', $this, 'opt_into_sitemap', 10, 1 );
 		$loader->add_action( 'prc_platform_on_publish', $this, 'set_default_post_visibility', 10, 1 );
@@ -255,6 +256,19 @@ class Content_Type {
 		$post_types        = is_array( $post_types ) ? $post_types : array( $post_types );
 		$args['post_type'] = array_merge( $post_types, array( self::$post_object_name ) );
 		return $args;
+	}
+
+	/**
+	 * Opt into bylines.
+	 *
+	 * @hook prc_platform__bylines_enabled_post_types
+	 *
+	 * @param array $post_types The post types.
+	 * @return array The post types.
+	 */
+	public function opt_into_bylines( $post_types ) {
+		$post_types[] = self::$post_object_name;
+		return $post_types;
 	}
 
 	/**
