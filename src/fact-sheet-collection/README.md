@@ -1,10 +1,11 @@
 # Fact Sheet Collection
-Contributors:      Seth Rubenstein
-Tags:              block
-Tested up to:      6.1
-Stable tag:        0.1.0
-License:           GPL-2.0-or-later
-License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+
+Contributors: Seth Rubenstein
+Tags: block
+Tested up to: 6.1
+Stable tag: 0.1.0
+License: GPL-2.0-or-later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Display the hierarchy of the fact sheet&#39;s collection term as well and a link to download an associated PDF.
 
@@ -38,7 +39,8 @@ Answer to foo bar dilemma.
 ## Changelog
 
 = 0.1.0 =
-* Release
+
+- Release
 
 ## Developer Notes
 

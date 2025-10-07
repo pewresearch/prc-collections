@@ -15,12 +15,7 @@
 		"anchor": true,
 		"html": false
 	},
-	"usesContext": [
-		"postType",
-		"postId",
-		"templateSlug",
-		"previewPostType"
-	],
+	"usesContext": ["postType", "postId", "templateSlug", "previewPostType"],
 	"textdomain": "collection-kicker",
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",

@@ -7,7 +7,7 @@
 	"category": "design",
 	"description": "Display the hierarchy of this fact sheet's collection term and a link to download an associated PDF if provided. If this collection has multiple language posts the main link will link to the English language post and then a listing of other languages will be provided automatically. These alternate language links will appear above the main collection.",
 	"attributes": {
-		"pdf" : {
+		"pdf": {
 			"type": "object"
 		},
 		"disableHeading": {
@@ -33,7 +33,7 @@
 		},
 		"spacing": {
 			"blockGap": true,
-			"margin": [ "top", "bottom" ],
+			"margin": ["top", "bottom"],
 			"padding": true,
 			"__experimentalDefaultControls": {
 				"padding": true
@@ -54,10 +54,7 @@
 			}
 		}
 	},
-	"usesContext": [
-		"postId",
-		"postType"
-	],
+	"usesContext": ["postId", "postType"],
 	"example": {
 		"attributes": {}
 	},

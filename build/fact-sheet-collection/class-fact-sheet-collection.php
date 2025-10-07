@@ -351,7 +351,7 @@ class Fact_Sheet_Collection {
 	 */
 	public function block_init() {
 		register_block_type_from_metadata(
-			PRC_COLLECTIONS_DIR . '/blocks/build/fact-sheet-collection',
+			PRC_COLLECTIONS_DIR . '/build/fact-sheet-collection',
 			array(
 				'render_callback' => array( $this, 'render_block_callback' ),
 			)

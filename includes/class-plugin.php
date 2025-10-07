@@ -70,9 +70,8 @@ class Plugin {
 		// Load plugin loading class.
 		require_once plugin_dir_path( __DIR__ ) . '/includes/class-loader.php';
 
+		// Load custom post type class.
 		require_once plugin_dir_path( __DIR__ ) . '/includes/class-content-type.php';
-
-		require_once plugin_dir_path( __DIR__ ) . '/blocks/class-blocks.php';
 
 		// Initialize the loader.
 		$this->loader = new Loader();
@@ -85,9 +84,22 @@ class Plugin {
 	 */
 	private function init_dependencies() {
 		new Content_Type( $this->get_loader() );
-		new Blocks( $this->get_loader() );
+
+		wp_register_block_metadata_collection(
+			plugin_dir_path( __DIR__ ) . 'build',
+			plugin_dir_path( __DIR__ ) . 'build/blocks-manifest.php'
+		);
+
+		// Load block classes.
+		$blocks_loaded = \PRC\Platform\Block_Utils\load_blocks( PRC_COLLECTIONS_DIR );
+		if ( ! is_wp_error( $blocks_loaded ) ) {
+			new Collection_Kicker( $this->get_loader() );
+			new Fact_Sheet_Collection( $this->get_loader() );
+		}
+
 		$this->loader->add_action( 'enqueue_block_editor_assets', $this, 'enqueue_inspector_sidebar_panel_assets' );
 	}
+
 
 	/**
 	 * Register the plugin panel assets.
