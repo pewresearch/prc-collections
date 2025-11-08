@@ -235,10 +235,6 @@ class Content_Type {
 				'terms'    => $collection_term->term_id,
 			),
 		);
-		$tax_query     = $query->get( 'tax_query' );
-		if ( $tax_query ) {
-			$new_tax_query = array_merge( $new_tax_query, $tax_query );
-		}
 		$query->set( 'post__not_in', array( $queried_object->ID ) );
 		$query->set( 'tax_query', $new_tax_query );
 	}
