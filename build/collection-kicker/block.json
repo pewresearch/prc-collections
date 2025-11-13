@@ -5,7 +5,7 @@
 	"version": "1.0.0",
 	"title": "Collection Kicker",
 	"category": "theme",
-	"description": "Display the 'kicker' for a collection term. You can select a specific term or default behavior is to display the term for the current post.",
+	"description": "Display the collection term's kicker. You can choose a specific term, or default to the current post's term.",
 	"attributes": {
 		"termId": {
 			"type": "integer"

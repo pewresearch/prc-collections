@@ -8,7 +8,7 @@ return array(
 		'version' => '1.0.0',
 		'title' => 'Collection Kicker',
 		'category' => 'theme',
-		'description' => 'Display the \'kicker\' for a collection term. You can select a specific term or default behavior is to display the term for the current post.',
+		'description' => 'Display the collection term\'s kicker. You can choose a specific term, or default to the current post\'s term.',
 		'attributes' => array(
 			'termId' => array(
 				'type' => 'integer'
@@ -36,7 +36,8 @@ return array(
 		'version' => '1.0.0',
 		'title' => 'Fact Sheet Collection',
 		'category' => 'design',
-		'description' => 'Display the hierarchy of this fact sheet\'s collection term and a link to download an associated PDF if provided. If this collection has multiple language posts the main link will link to the English language post and then a listing of other languages will be provided automatically. These alternate language links will appear above the main collection.',
+		'description' => 'Display this fact sheet\'s collection hierarchy and provide a PDF download link if available.
+If the collection has posts in multiple languages, the main link will point to the English post, with alternate language links listed above it.',
 		'attributes' => array(
 			'pdf' => array(
 				'type' => 'object'
