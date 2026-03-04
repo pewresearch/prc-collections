@@ -1,23 +1,28 @@
 {
-	"$schema": "https://schemas.wp.org/trunk/block.json",
-	"apiVersion": 3,
-	"name": "prc-block/collection-kicker",
-	"version": "1.0.0",
-	"title": "Collection Kicker",
-	"category": "theme",
-	"description": "Display the collection term's kicker. You can choose a specific term, or default to the current post's term.",
-	"attributes": {
-		"termId": {
-			"type": "integer"
-		}
-	},
-	"supports": {
-		"anchor": true,
-		"html": false
-	},
-	"usesContext": ["postType", "postId", "templateSlug", "previewPostType"],
-	"textdomain": "collection-kicker",
-	"editorScript": "file:./index.js",
-	"editorStyle": "file:./index.css",
-	"style": "file:./style-index.css"
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "prc-block/collection-kicker",
+  "version": "1.0.0",
+  "title": "Collection Kicker",
+  "category": "theme",
+  "description": "Display the collection term's kicker. You can choose a specific term, or default to the current post's term.",
+  "attributes": {
+    "termId": {
+      "type": "integer"
+    }
+  },
+  "supports": {
+    "anchor": true,
+    "html": false
+  },
+  "usesContext": [
+    "postType",
+    "postId",
+    "templateSlug",
+    "previewPostType"
+  ],
+  "textdomain": "collection-kicker",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css"
 }

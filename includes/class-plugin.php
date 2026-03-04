@@ -90,7 +90,10 @@ class Plugin {
 			plugin_dir_path( __DIR__ ) . 'build/blocks-manifest.php'
 		);
 
-		// Load block classes.
+		// Load block classes if the function exists.
+		if ( ! function_exists( '\PRC\Platform\Block_Utils\load_blocks' ) ) {
+			return;
+		}
 		$blocks_loaded = \PRC\Platform\Block_Utils\load_blocks( PRC_COLLECTIONS_DIR );
 		if ( ! is_wp_error( $blocks_loaded ) ) {
 			new Collection_Kicker( $this->get_loader() );

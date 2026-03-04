@@ -6,7 +6,7 @@
  */
 
 .wp-block-prc-block-fact-sheet-collection {
-	--border-color: rgba(34, 36, 38, 0.15);
+	--brdr-color: rgba(34, 36, 38, 0.15);
 	--gap: 0.75em;
 
 	margin-top: 1.5em;
@@ -24,7 +24,7 @@
 		padding-top: 0;
 		.wp-block-prc-block-fact-sheet-collection--alt-languages {
 			background: white;
-			border-bottom: 1px solid var(--border-color);
+			border-bottom: 1px solid var(--brdr-color);
 			padding-bottom: 1em;
 			margin-bottom: 1em;
 		}
@@ -37,7 +37,7 @@
 	.wp-block-prc-block-fact-sheet-collection--parent-term {
 		font-weight: bold;
 		text-transform: uppercase;
-		border-bottom: 1px solid var(--border-color);
+		border-bottom: 1px solid var(--brdr-color);
 		padding-bottom: 0.5em;
 		margin-bottom: 1em;
 	}
@@ -58,7 +58,7 @@
 	}
 
 	.wp-block-prc-block-fact-sheet-collection--term-list {
-		border-bottom: 1px solid var(--border-color);
+		border-bottom: 1px solid var(--brdr-color);
 		padding-bottom: 1em;
 
 		display: flex;
@@ -76,7 +76,7 @@
 			// &:not(:first-child)::before {
 			// 	content: "";
 			// 	display: block;
-			// 	border-right: 1px solid var(--border-color);
+			// 	border-right: 1px solid var(--brdr-color);
 			// 	height: 50%;
 			// 	margin-right: var(--gap);
 			// }

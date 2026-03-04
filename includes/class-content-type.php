@@ -86,7 +86,7 @@ class Content_Type {
 		'has_archive'        => true,
 		'hierarchical'       => true,
 		'menu_position'      => 60,
-		'supports'           => array( 'title', 'editor', 'excerpt', 'revisions', 'custom-fields', 'page-attributes', 'thumbnail' ),
+		'supports'           => array( 'title', 'editor', 'excerpt', 'revisions', 'custom-fields', 'page-attributes', 'thumbnail', 'prc-schema-seo' ),
 		'template'           => array(
 			array( 'prc-block/grid-controller', array() ),
 		),
@@ -136,14 +136,47 @@ class Content_Type {
 	 * @param object $loader The loader object.
 	 */
 	public function __construct( $loader ) {
+		$loader->add_action( 'init', $this, 'register_default_post_type_support', 5 );
 		$loader->add_action( 'init', $this, 'register_term_data_store' );
 		$loader->add_filter( 'default_wp_template_part_areas', $this, 'kicker_template_areas', 11, 1 );
-		$loader->add_filter( 'prc_platform_pub_listing_default_args', $this, 'opt_into_pub_listing' );
 		$loader->add_action( 'pre_get_posts', $this, 'filter_self_reference_out', 100, 1 );
-		$loader->add_filter( 'prc_platform__bylines_enabled_post_types', $this, 'opt_into_bylines', 10, 1 );
-		$loader->add_filter( 'prc_platform__art_direction_enabled_post_types', $this, 'enable_art_direction_support' );
-		$loader->add_filter( 'prc_sitemap_supported_post_types', $this, 'opt_into_sitemap', 10, 1 );
 		$loader->add_action( 'prc_platform_on_publish', $this, 'set_default_post_visibility', 10, 1 );
+	}
+
+	/**
+	 * Register default post type support for collections.
+	 *
+	 * @hook init
+	 */
+	public function register_default_post_type_support() {
+		add_post_type_support( 'post', 'prc-collections' );
+		add_post_type_support( 'feature', 'prc-collections' );
+		// Add supports to the collections post type itself.
+		add_post_type_support( self::$post_object_name, 'prc-bylines' );
+		add_post_type_support( self::$post_object_name, 'prc-art-direction' );
+		add_post_type_support( self::$post_object_name, 'prc-sitemap' );
+		add_post_type_support( self::$post_object_name, 'prc-publication-listing' );
+	}
+
+	/**
+	 * Get the enabled post types for the collections taxonomy.
+	 *
+	 * @return array The enabled post types.
+	 */
+	public static function get_enabled_post_types() {
+		$post_types         = get_post_types( array( 'public' => true ), 'names' );
+		$supported_types    = array_values(
+			array_filter(
+				$post_types,
+				function ( $pt ) {
+					return post_type_supports( $pt, 'prc-collections' );
+				}
+			)
+		);
+		// Maintain backward compatibility with filter.
+		$filter_types       = apply_filters( 'prc_platform__collections_enabled_post_types', array() );
+		$enabled_post_types = array_unique( array_merge( $supported_types, $filter_types ) );
+		return array_values( $enabled_post_types );
 	}
 
 	/**
@@ -151,18 +184,18 @@ class Content_Type {
 	 * Additionally, register the kicker meta.
 	 *
 	 * @hook init
-	 * @uses prc_platform__collections_enabled_post_types
 	 */
 	public function register_term_data_store() {
 		// Register the post type.
 		register_post_type( self::$post_object_name, self::$post_object_args );
 
 		// Register the taxonomy.
-		$enabled_post_types = apply_filters( 'prc_platform__collections_enabled_post_types', array( 'post', 'feature' ) );
+		$enabled_post_types = self::get_enabled_post_types();
 		register_taxonomy( self::$taxonomy_object_name, $enabled_post_types, self::$taxonomy_object_args );
 
 		// Establish a relationship between the post type and taxonomy.
-		\TDS\add_relationship( self::$post_object_name, self::$taxonomy_object_name );
+		// Disable automatic permalink rewrites since collections handles its own permalink structure.
+		\TDS\add_relationship( self::$post_object_name, self::$taxonomy_object_name, false );
 
 		// Register the kicker meta.
 		$this->register_kicker_meta();
@@ -237,60 +270,6 @@ class Content_Type {
 		);
 		$query->set( 'post__not_in', array( $queried_object->ID ) );
 		$query->set( 'tax_query', $new_tax_query );
-	}
-
-	/**
-	 * Opt the post type into the publication listing.
-	 *
-	 * @hook prc_platform_pub_listing_default_args
-	 *
-	 * @param array $args The arguments.
-	 * @return array The arguments.
-	 */
-	public function opt_into_pub_listing( $args = array() ) {
-		$post_types        = $args['post_type'] ?? array();
-		$post_types        = is_array( $post_types ) ? $post_types : array( $post_types );
-		$args['post_type'] = array_merge( $post_types, array( self::$post_object_name ) );
-		return $args;
-	}
-
-	/**
-	 * Opt into bylines.
-	 *
-	 * @hook prc_platform__bylines_enabled_post_types
-	 *
-	 * @param array $post_types The post types.
-	 * @return array The post types.
-	 */
-	public function opt_into_bylines( $post_types ) {
-		$post_types[] = self::$post_object_name;
-		return $post_types;
-	}
-
-	/**
-	 * Opt into sitemap.
-	 *
-	 * @hook prc_sitemap_supported_post_types
-	 *
-	 * @param array $post_types The post types.
-	 * @return array The post types.
-	 */
-	public function opt_into_sitemap( $post_types ) {
-		$post_types[] = self::$post_object_name;
-		return $post_types;
-	}
-
-	/**
-	 * Enable art direction support.
-	 *
-	 * @hook prc_platform__art_direction_enabled_post_types
-	 *
-	 * @param array $post_types The post types.
-	 * @return array The post types.
-	 */
-	public function enable_art_direction_support( $post_types ) {
-		$post_types[] = self::$post_object_name;
-		return $post_types;
 	}
 
 	/**
