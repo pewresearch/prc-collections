@@ -91,7 +91,7 @@ class Fact_Sheet_Collection {
 				'fields'     => 'slugs',
 			)
 		);
-		$this->languages = $languages;
+		$this->languages = is_wp_error( $languages ) ? array() : $languages;
 	}
 
 	/**
