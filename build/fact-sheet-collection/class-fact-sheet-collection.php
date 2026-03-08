@@ -106,7 +106,7 @@ class Fact_Sheet_Collection {
 			$post_status[] = 'draft';
 			$post_status[] = 'private';
 		}
-		$languages_to_filter_out = $this->languages;
+		$languages_to_filter_out = is_array( $this->languages ) ? $this->languages : array();
 		$languages_to_filter_out = array_diff( $languages_to_filter_out, array( 'en' ) );
 		// If this child term has english posts then use the english post link, otherwise fallback to the child term link.
 		$english_post = get_posts(
