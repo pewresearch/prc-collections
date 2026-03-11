@@ -23,5 +23,6 @@
 	},
 	"dependencies": {
 		"@wordpress/icons": "^11.1.0"
-	}
+	},
+	"license": "GPL-2.0-or-later"
 }
