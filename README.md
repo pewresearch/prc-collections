@@ -1,12 +1,12 @@
 # PRC Collections
 
-Registers a hybrid `collections` post type and `collection` taxonomy that allows editors to curate groups of PRC content sharing common themes, research initiatives, or special projects (e.g., the Religious Landscape Study). The post type and taxonomy are linked via Term Data Store (TDS), so each collection post has a corresponding taxonomy term used to tag associated content.
+Registers a hybrid `collections` post type and `collection` taxonomy that allows editors to curate groups of PRC content sharing common themes, research initiatives, or special projects (e.g., the Religious Landscape Study). The post type and taxonomy are linked via [`prc/term-data-store`](https://github.com/pewresearch/term-data-store) (namespace `PRC\TDS`), so each collection post has a corresponding taxonomy term used to tag associated content.
 
 ## What it does
 
 - Registers a hierarchical `collections` custom post type with archive support, full REST API exposure, and a `prc-block/grid-controller` default block template
 - Registers a hierarchical `collection` taxonomy applied to all public post types that declare `prc-collections` support (initially `post` and `feature`)
-- Establishes a TDS (Term Data Store) relationship between the `collections` post type and the `collection` taxonomy — each collection post maps to a term, enabling content to be tagged and queried by collection
+- Establishes a `prc/term-data-store` relationship between the `collections` post type and the `collection` taxonomy — each collection post maps to a term, enabling content to be tagged and queried by collection
 - Registers a `kicker_pattern_slug` post meta field on collection posts, pointing to a Site Editor template part used as the collection's visual "kicker" (bug/label)
 - Adds a `kicker` template part area to the Site Editor so kicker template parts can be managed separately from other template parts
 - Provides an editor sidebar panel (Document Settings) on collection posts to assign a kicker template part via a combobox picker
@@ -20,7 +20,7 @@ Registers a hybrid `collections` post type and `collection` taxonomy that allows
 |------|---------|
 | `prc-collections.php` | Plugin entry point; defines constants, registers activation/deactivation hooks, bootstraps the plugin |
 | `includes/class-plugin.php` | Orchestrates dependency loading, block metadata registration, and block class initialization |
-| `includes/class-content-type.php` | Registers the `collections` post type, `collection` taxonomy, kicker meta, TDS relationship, template part area, and query modification |
+| `includes/class-content-type.php` | Registers the `collections` post type, `collection` taxonomy, kicker meta, `prc/term-data-store` relationship, template part area, and query modification |
 | `includes/class-loader.php` | Hook registration utility used internally to defer add_action/add_filter calls |
 | `includes/utils.php` | Namespace placeholder; currently empty |
 | `includes/class-prc-collections-activator.php` | Activation hook handler |
@@ -36,7 +36,7 @@ Registers a hybrid `collections` post type and `collection` taxonomy that allows
 | Hook | Direction | Description |
 |------|-----------|-------------|
 | `init` (priority 5) | Action | Registers `prc-collections` post type support for `post` and `feature`; adds `prc-bylines`, `prc-art-direction`, `prc-sitemap`, and `prc-publication-listing` support to the `collections` post type |
-| `init` (priority 10) | Action | Registers the `collections` post type, `collection` taxonomy, TDS relationship, and kicker post meta |
+| `init` (priority 10) | Action | Registers the `collections` post type, `collection` taxonomy, `prc/term-data-store` relationship, and kicker post meta |
 | `default_wp_template_part_areas` (priority 11) | Filter | Adds a `kicker` area to the Site Editor template part area list |
 | `pre_get_posts` (priority 100) | Action | On publication listing queries for a `collections` page, injects a `tax_query` for the mapped collection term and excludes the collection post itself from results |
 | `prc_platform_on_publish` (priority 10) | Action | Sets `hidden-on-index` as the `_post_visibility` term for newly published collection posts that have no existing visibility terms |
@@ -76,11 +76,11 @@ Registers a hybrid `collections` post type and `collection` taxonomy that allows
 |----------|-----------|------|------|-------------|
 | `kicker_pattern_slug` | `collections` | string | Yes | Slug of the `wp_template_part` to use as this collection's kicker. Managed via the editor sidebar panel. |
 
-## TDS relationship
+## Term Data Store relationship
 
-The plugin calls `\TDS\add_relationship( 'collections', 'collection', false )` on `init`. This links each `collections` post to a `collection` taxonomy term (stored as `tds_post_id` in term meta and `tds_term_id` in post meta). Automatic permalink rewriting is disabled (`false` as the third argument) because collections manage their own permalink structure.
+The plugin calls `\PRC\TDS\add_relationship( 'collections', 'collection', false )` on `init`. This links each `collections` post to a `collection` taxonomy term (stored as `tds_post_id` in term meta and `tds_term_id` in post meta). Automatic permalink rewriting is disabled (`false` as the third argument) because collections manage their own permalink structure.
 
-The `filter_self_reference_out` method uses `\TDS\get_related_term( $post )` to look up the term for the current collection page, then injects a `tax_query` into any `isPubListingQuery`-flagged query.
+The `filter_self_reference_out` method uses `\PRC\TDS\get_related_term( $post )` to look up the term for the current collection page, then injects a `tax_query` into any `isPubListingQuery`-flagged query.
 
 ## Editor sidebar panel
 
@@ -112,8 +112,8 @@ add_filter( 'prc_platform__collections_enabled_post_types', function( $types ) {
 ## Dependencies
 
 - `prc-platform-core` (required plugin)
-- `prc-platform/block-utils` — `\PRC\Platform\Block_Utils\load_blocks()` and `classNames()` used at runtime; blocks will not register if the function is unavailable
-- Term Data Store (TDS) library — `\TDS\add_relationship()` and `\TDS\get_related_term()` must be available on `init`
+- `prc/block-utils` (via `prc-platform-core`) — `\PRC\BlockUtils\load_blocks()` and `classNames()` used at runtime; blocks will not register if the function is unavailable
+- [`prc/term-data-store`](https://github.com/pewresearch/term-data-store) (`PRC\TDS` namespace) — `\PRC\TDS\add_relationship()` and `\PRC\TDS\get_related_term()` must be available on `init`
 - `prc-platform-core` platform helper `\PRC\Platform\get_wp_admin_current_post_type()` — used to conditionally enqueue the editor sidebar panel
 
 ## Build

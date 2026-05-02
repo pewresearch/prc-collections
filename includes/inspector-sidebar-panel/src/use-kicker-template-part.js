@@ -2,7 +2,7 @@
  * WordPress Dependencies
  */
 import { useEntityRecords } from '@wordpress/core-data';
-import { useMemo } from 'react';
+import { useMemo } from '@wordpress/element';
 
 export default function useKickerTemplatePart({
 	kickerSlug,
@@ -64,20 +64,13 @@ export default function useKickerTemplatePart({
 		}
 	}, [kickerSlug, hasResolved, records]);
 
-	console.log(
-		'useKickerTemplatePart',
-		kickerOptions,
-		hasKickers,
-		selectedKickerAndExists,
-		records,
-		kickerId
-	);
-
 	return {
 		kickerOptions,
 		hasKickers,
 		selectedKickerAndExists,
 		kickerId,
 		setKickerSlug,
+		records,
+		hasResolved,
 	};
 }

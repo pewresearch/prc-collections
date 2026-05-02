@@ -2,21 +2,69 @@
  * WordPress Dependencies
  */
 import { __ } from '@wordpress/i18n';
-import { useSelect } from '@wordpress/data';
 // eslint-disable-next-line no-restricted-imports
-import { createInterpolateElement, Fragment } from '@wordpress/element';
 import {
+	createInterpolateElement,
+	useState,
+	useEffect,
+	useRef,
+} from '@wordpress/element';
+import { useDispatch } from '@wordpress/data';
+import { store as coreStore } from '@wordpress/core-data';
+import { store as noticesStore } from '@wordpress/notices';
+import { plus } from '@wordpress/icons';
+import {
+	Button,
 	ComboboxControl,
+	ExternalLink,
 	Notice,
+	TextControl,
+	__experimentalVStack as VStack, // eslint-disable-line
 	__experimentalHStack as HStack, // eslint-disable-line
-	__experimentalToggleGroupControl as ToggleGroupControl, // eslint-disable-line
-	__experimentalToggleGroupControlOptionIcon as ToggleGroupControlOptionIcon, // eslint-disable-line
 } from '@wordpress/components';
 
 /**
  * Internal Dependencies
  */
 import useKickerTemplatePart from './use-kicker-template-part';
+
+function getUniqueTitle(title, existingRecords) {
+	const lower = title.toLowerCase();
+	const existing = (existingRecords || []).map((r) =>
+		r.title?.rendered ? r.title.rendered.toLowerCase() : ''
+	);
+	if (!existing.includes(lower)) {
+		return title;
+	}
+	let suffix = 2;
+	while (existing.includes(`${lower} ${suffix}`)) {
+		suffix++;
+	}
+	return `${title} ${suffix}`;
+}
+
+function getCleanSlugFromTitle(title) {
+	const fromTitle = title
+		.trim()
+		.toLowerCase()
+		.replace(/\s+/g, '-')
+		.replace(/[^a-z0-9-]/g, '');
+	return fromTitle || 'kicker-part';
+}
+
+function getUniqueSlug(baseSlug, existingRecords) {
+	const slugs = new Set(
+		(existingRecords || []).map((r) => (r.slug ? String(r.slug) : ''))
+	);
+	if (!slugs.has(baseSlug)) {
+		return baseSlug;
+	}
+	let suffix = 2;
+	while (slugs.has(`${baseSlug}-${suffix}`)) {
+		suffix++;
+	}
+	return `${baseSlug}-${suffix}`;
+}
 
 export default function KickerTemplatePartControl({
 	kickerSlug,
@@ -27,12 +75,103 @@ export default function KickerTemplatePartControl({
 		? `${siteUrl}/wp-admin/site-editor.php?path=%2Fpatterns&categoryType=wp_template_part&categoryId=kicker`
 		: '';
 
-	// Fetch all template parts.
-	const { kickerOptions, hasKickers, selectedKickerAndExists } =
-		useKickerTemplatePart({
-			kickerSlug,
-			setKickerSlug: (newVal) => onChange(newVal),
-		});
+	const {
+		kickerOptions,
+		hasKickers,
+		selectedKickerAndExists,
+		kickerId,
+		records,
+		hasResolved,
+	} = useKickerTemplatePart({
+		kickerSlug,
+		setKickerSlug: (newVal) => onChange(newVal),
+	});
+
+	const { saveEntityRecord, invalidateResolution } = useDispatch(coreStore);
+	const { createSuccessNotice, createErrorNotice } =
+		useDispatch(noticesStore);
+
+	const [isCreating, setIsCreating] = useState(false);
+	const [newKickerTitle, setNewKickerTitle] = useState('');
+	const [isSaving, setIsSaving] = useState(false);
+	const [pendingSlug, setPendingSlug] = useState(null);
+	const onChangeRef = useRef(onChange);
+	useEffect(() => {
+		onChangeRef.current = onChange;
+	});
+
+	useEffect(() => {
+		if (!pendingSlug || !records) {
+			return;
+		}
+		const found = records.find((r) => r.slug === pendingSlug);
+		if (found) {
+			onChangeRef.current(pendingSlug);
+			setPendingSlug(null);
+		}
+	}, [pendingSlug, records]);
+
+	const siteEditorEditUrl =
+		siteUrl && kickerId
+			? `${siteUrl}/wp-admin/site-editor.php?p=${encodeURIComponent(
+					`/wp_template_part/${kickerId}`
+			  )}&canvas=edit`
+			: '';
+
+	const handleCreateKicker = async () => {
+		const trimmed = newKickerTitle.trim();
+		if (!trimmed) {
+			return;
+		}
+		setIsSaving(true);
+		try {
+			const uniqueTitle = getUniqueTitle(trimmed, records);
+			const baseSlug = getCleanSlugFromTitle(uniqueTitle);
+			const slug = getUniqueSlug(baseSlug, records);
+
+			await saveEntityRecord(
+				'postType',
+				'wp_template_part',
+				{
+					slug,
+					title: uniqueTitle,
+					content: '',
+					area: 'kicker',
+				},
+				{ throwOnError: true }
+			);
+
+			invalidateResolution('getEntityRecords', [
+				'postType',
+				'wp_template_part',
+				{ per_page: -1 },
+			]);
+
+			setPendingSlug(slug);
+			setNewKickerTitle('');
+			setIsCreating(false);
+			createSuccessNotice(
+				__('Kicker template created.', 'kicker-control'),
+				{
+					type: 'snackbar',
+				}
+			);
+		} catch (error) {
+			const message =
+				error?.message ||
+				__('Could not create kicker template.', 'kicker-control');
+			createErrorNotice(message, {
+				type: 'snackbar',
+			});
+		} finally {
+			setIsSaving(false);
+		}
+	};
+
+	const handleCancelCreate = () => {
+		setIsCreating(false);
+		setNewKickerTitle('');
+	};
 
 	// Notice for when no kickers have been created.
 	const noKickersNotice = (
@@ -66,12 +205,13 @@ export default function KickerTemplatePartControl({
 	);
 
 	return (
-		<Fragment>
+		<VStack spacing="2">
 			<ComboboxControl
 				label={__('Kicker Template', 'kicker-control')}
 				value={kickerSlug}
 				options={kickerOptions}
 				onChange={onChange}
+				disabled={!hasResolved}
 				help={
 					hasKickers &&
 					createInterpolateElement(
@@ -81,7 +221,7 @@ export default function KickerTemplatePartControl({
 						),
 						{
 							a: (
-							<a // eslint-disable-line
+								<a // eslint-disable-line
 									href={kickerTemplateUrl}
 									target="_blank"
 									rel="noreferrer"
@@ -91,8 +231,55 @@ export default function KickerTemplatePartControl({
 					)
 				}
 			/>
+			<VStack spacing="3">
+				{kickerSlug && kickerId && siteEditorEditUrl ? (
+					<ExternalLink href={siteEditorEditUrl}>
+						{__('Edit in Site Editor', 'kicker-control')}
+					</ExternalLink>
+				) : null}
+				<Button
+					variant="tertiary"
+					icon={plus}
+					onClick={() => setIsCreating((open) => !open)}
+					aria-expanded={isCreating}
+				>
+					{__('Create new kicker', 'kicker-control')}
+				</Button>
+			</VStack>
+			{isCreating ? (
+				<VStack spacing="2">
+					<TextControl
+						label={__('Name', 'kicker-control')}
+						value={newKickerTitle}
+						onChange={setNewKickerTitle}
+						onKeyDown={(event) => {
+							if (event.key === 'Enter' && !isSaving) {
+								event.preventDefault();
+								handleCreateKicker();
+							}
+						}}
+					/>
+					<HStack spacing="2">
+						<Button
+							variant="primary"
+							onClick={handleCreateKicker}
+							isBusy={isSaving}
+							disabled={isSaving || !newKickerTitle.trim()}
+						>
+							{__('Create', 'kicker-control')}
+						</Button>
+						<Button
+							variant="secondary"
+							onClick={handleCancelCreate}
+							disabled={isSaving}
+						>
+							{__('Cancel', 'kicker-control')}
+						</Button>
+					</HStack>
+				</VStack>
+			) : null}
 			{!hasKickers && noKickersNotice}
 			{hasKickers && !selectedKickerAndExists && kickerDoesntExistNotice}
-		</Fragment>
+		</VStack>
 	);
 }

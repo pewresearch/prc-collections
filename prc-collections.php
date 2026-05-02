@@ -27,7 +27,7 @@ namespace PRC\Platform\Collections;
  * License:           GPL-2.0+
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain:       prc-collections
- * Requires Plugins:  prc-platform-core
+ * Requires Plugins:  prc-scripts, prc-post-publish-pipeline
  */
 
 // If this file is called directly, abort.
@@ -38,9 +38,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( ! defined( 'DEFAULT_TECHNICAL_CONTACT' ) ) {
+	define( 'DEFAULT_TECHNICAL_CONTACT', 'webdev@pewresearch.org' );
+}
+
 define( 'PRC_COLLECTIONS_FILE', __FILE__ );
 define( 'PRC_COLLECTIONS_DIR', __DIR__ );
 define( 'PRC_COLLECTIONS_VERSION', '1.0.0' );
+
+// Load the Jetpack Autoloader so runtime version-selection can pick the
+// highest version across all plugins that ship the same library dep
+// (see .cursor/plans/composer-shape-b-migration_0e4e9991.plan.md).
+$prc_collections_autoloader = __DIR__ . '/vendor/autoload_packages.php';
+if ( file_exists( $prc_collections_autoloader ) ) {
+	require_once $prc_collections_autoloader;
+}
+unset( $prc_collections_autoloader );
 
 /**
  * The code that runs during plugin activation.

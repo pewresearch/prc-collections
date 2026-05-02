@@ -164,8 +164,8 @@ class Content_Type {
 	 * @return array The enabled post types.
 	 */
 	public static function get_enabled_post_types() {
-		$post_types         = get_post_types( array( 'public' => true ), 'names' );
-		$supported_types    = array_values(
+		$post_types      = get_post_types( array( 'public' => true ), 'names' );
+		$supported_types = array_values(
 			array_filter(
 				$post_types,
 				function ( $pt ) {
@@ -195,7 +195,7 @@ class Content_Type {
 
 		// Establish a relationship between the post type and taxonomy.
 		// Disable automatic permalink rewrites since collections handles its own permalink structure.
-		\TDS\add_relationship( self::$post_object_name, self::$taxonomy_object_name, false );
+		\PRC\TDS\add_relationship( self::$post_object_name, self::$taxonomy_object_name, false );
 
 		// Register the kicker meta.
 		$this->register_kicker_meta();
@@ -251,25 +251,35 @@ class Content_Type {
 		if ( true !== $query->get( 'isPubListingQuery' ) ) {
 			return;
 		}
-		// Basically, on collection pages we want to get the term id and assign a tax_query to the block query so that we're filtering by only the posts in that collection.
 		$queried_object = get_queried_object();
 		if ( ! is_a( $queried_object, 'WP_Post' ) || $queried_object->post_type !== self::$post_object_name ) {
 			return;
 		}
-		$collection_term = \TDS\get_related_term( $queried_object );
+		$collection_term = \PRC\TDS\get_related_term( $queried_object );
 		if ( ! $collection_term ) {
 			return;
 		}
-		$new_tax_query = array(
-			'relation' => 'AND',
-			array(
-				'taxonomy' => self::$taxonomy_object_name,
-				'field'    => 'term_id',
-				'terms'    => $collection_term->term_id,
-			),
+
+		// Merge the collection term clause into the existing tax_query
+		// so we preserve any earlier clauses (e.g. _post_visibility).
+		$existing_tax_query = $query->get( 'tax_query' );
+		if ( ! is_array( $existing_tax_query ) ) {
+			$existing_tax_query = array();
+		}
+		$existing_tax_query[] = array(
+			'taxonomy' => self::$taxonomy_object_name,
+			'field'    => 'term_id',
+			'terms'    => $collection_term->term_id,
 		);
-		$query->set( 'post__not_in', array( $queried_object->ID ) );
-		$query->set( 'tax_query', $new_tax_query );
+		$query->set( 'tax_query', $existing_tax_query );
+
+		// Merge the current collection post into any existing exclusions.
+		$existing_not_in = $query->get( 'post__not_in' );
+		if ( ! is_array( $existing_not_in ) ) {
+			$existing_not_in = array();
+		}
+		$existing_not_in[] = $queried_object->ID;
+		$query->set( 'post__not_in', array_unique( $existing_not_in ) );
 	}
 
 	/**

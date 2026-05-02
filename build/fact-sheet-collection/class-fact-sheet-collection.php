@@ -273,7 +273,7 @@ class Fact_Sheet_Collection {
 					return wp_sprintf(
 						'<a href="%1$s" class="%2$s">%3$s</a>',
 						$child_term['link'],
-						\PRC\Platform\Block_Utils\classNames(
+						\PRC\BlockUtils\classNames(
 							'wp-block-prc-block-fact-sheet-collection--term-link',
 							array(
 								'is-active' => $child_term['term_id'] === $collection_term->term_id,

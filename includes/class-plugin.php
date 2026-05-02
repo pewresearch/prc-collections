@@ -91,10 +91,10 @@ class Plugin {
 		);
 
 		// Load block classes if the function exists.
-		if ( ! function_exists( '\PRC\Platform\Block_Utils\load_blocks' ) ) {
+		if ( ! function_exists( '\PRC\BlockUtils\load_blocks' ) ) {
 			return;
 		}
-		$blocks_loaded = \PRC\Platform\Block_Utils\load_blocks( PRC_COLLECTIONS_DIR );
+		$blocks_loaded = \PRC\BlockUtils\load_blocks( PRC_COLLECTIONS_DIR );
 		if ( ! is_wp_error( $blocks_loaded ) ) {
 			new Collection_Kicker( $this->get_loader() );
 			new Fact_Sheet_Collection( $this->get_loader() );
@@ -139,7 +139,7 @@ class Plugin {
 		if ( is_wp_error( $registered ) ) {
 			return;
 		}
-		if ( wp_script_is( $registered, 'registered' ) && \PRC\Platform\get_wp_admin_current_post_type() === Content_Type::$post_object_name ) {
+		if ( wp_script_is( $registered, 'registered' ) && \PRC\BlockUtils\get_wp_admin_current_post_type() === Content_Type::$post_object_name ) {
 			wp_enqueue_script( $registered );
 		}
 	}

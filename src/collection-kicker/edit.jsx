@@ -1,7 +1,7 @@
 /**
  * WordPress Dependencies
  */
-import { useBlockProps, Warning } from '@wordpress/block-editor';
+import { useBlockProps } from '@wordpress/block-editor';
 import { Flex, FlexItem, FlexBlock } from '@wordpress/components';
 
 /**
@@ -14,16 +14,16 @@ export default function Edit({}) {
 
 	return (
 		<div {...blockProps}>
-			<Warning>
-				<Flex>
-					<FlexItem>
-						<Icon />
-					</FlexItem>
-					<FlexBlock>
-						<span>Collection Kicker Template</span>
-					</FlexBlock>
-				</Flex>
-			</Warning>
+			<Flex>
+				<FlexItem>
+					<Icon />
+				</FlexItem>
+				<FlexBlock>
+					<span>
+						<strong>Collection Kicker Template</strong>
+					</span>
+				</FlexBlock>
+			</Flex>
 		</div>
 	);
 }

@@ -48,6 +48,7 @@ class Collection_Kicker {
 	public function render_block_callback( $attributes, $content, $block ) {
 		$ref_id  = array_key_exists( 'postId', $block->context ) ? $block->context['postId'] : false;
 		$term_id = array_key_exists( 'termId', $attributes ) ? $attributes['termId'] : false;
+
 		// if $term_id is false, we need to get the current collection taxonomy terms for this post and get the first term and use it as the fallback. If that fails, return.
 		if ( false === $term_id ) {
 			$terms = get_the_terms( $ref_id, 'collection' );
@@ -85,8 +86,12 @@ class Collection_Kicker {
 			}
 
 			$found_part = get_page_by_path( $kicker_slug, OBJECT, 'wp_template_part' );
+
 			if ( null === $found_part ) {
-				return;
+				return wp_sprintf(
+					'<!-- "%s" Kicker Not Found -->',
+					$kicker_slug
+				);
 			}
 
 			$cached_data = array(
