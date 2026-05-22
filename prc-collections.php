@@ -46,14 +46,15 @@ define( 'PRC_COLLECTIONS_FILE', __FILE__ );
 define( 'PRC_COLLECTIONS_DIR', __DIR__ );
 define( 'PRC_COLLECTIONS_VERSION', '1.0.0' );
 
-// Load the Jetpack Autoloader so runtime version-selection can pick the
-// highest version across all plugins that ship the same library dep
-// (see .cursor/plans/composer-shape-b-migration_0e4e9991.plan.md).
-$prc_collections_autoloader = __DIR__ . '/vendor/autoload_packages.php';
-if ( file_exists( $prc_collections_autoloader ) ) {
-	require_once $prc_collections_autoloader;
+// When running inside the PRC Platform monorepo the root autoloader already
+// provides every dependency; skip per-plugin Jetpack Autoloader initialization.
+if ( ! defined( 'PRC_PLATFORM' ) ) {
+	$prc_collections_autoloader = __DIR__ . '/vendor/autoload_packages.php';
+	if ( file_exists( $prc_collections_autoloader ) ) {
+		require_once $prc_collections_autoloader;
+	}
+	unset( $prc_collections_autoloader );
 }
-unset( $prc_collections_autoloader );
 
 /**
  * The code that runs during plugin activation.

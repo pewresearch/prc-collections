@@ -32,9 +32,9 @@ built modules 15.3 KiB (javascript) 3.59 KiB (css/mini-extract) [1m[33m[built]
   modules by path [1m./src/fact-sheet-collection/[39m[22m 12.7 KiB (javascript) 2.99 KiB (css/mini-extract)
     [1m./src/fact-sheet-collection/index.js + 18 modules[39m[22m 12.7 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
     css ../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]![1m./src/fact-sheet-collection/style.scss[39m[22m 2.99 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 6145 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 5829 ms
 
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 167 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 173 ms
 Block metadata PHP file generated at: build/blocks-manifest.php
 
 > @prc/collections@1.0.0 build:inspector-panel
@@ -45,4 +45,4 @@ asset [1m[32mindex.asset.php[39m[22m 250 bytes [1m[32m[emitted][39m[22m 
 Entrypoint [1mindex[39m[22m 6.87 KiB = [1m[32mindex.js[39m[22m 6.63 KiB [1m[32mindex.asset.php[39m[22m 250 bytes
 orphan modules 238 KiB [1m[33m[orphan][39m[22m 333 modules
 [1m./includes/inspector-sidebar-panel/src/index.js + 14 modules[39m[22m 14 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 7241 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 4523 ms
