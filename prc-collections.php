@@ -38,10 +38,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! defined( 'DEFAULT_TECHNICAL_CONTACT' ) ) {
-	define( 'DEFAULT_TECHNICAL_CONTACT', 'webdev@pewresearch.org' );
-}
-
 define( 'PRC_COLLECTIONS_FILE', __FILE__ );
 define( 'PRC_COLLECTIONS_DIR', __DIR__ );
 define( 'PRC_COLLECTIONS_VERSION', '1.0.0' );
@@ -55,27 +51,6 @@ if ( ! defined( 'PRC_PLATFORM' ) ) {
 	}
 	unset( $prc_collections_autoloader );
 }
-
-/**
- * The code that runs during plugin activation.
- * This action is documented in includes/class-prc-collections-activator.php
- */
-function activate_prc_collections() {
-	require_once plugin_dir_path( __FILE__ ) . 'includes/class-prc-collections-activator.php';
-	PRC_Collections_Activator::activate();
-}
-
-/**
- * The code that runs during plugin deactivation.
- * This action is documented in includes/class-prc-collections-deactivator.php
- */
-function deactivate_prc_collections() {
-	require_once plugin_dir_path( __FILE__ ) . 'includes/class-prc-collections-deactivator.php';
-	PRC_Collections_Deactivator::deactivate();
-}
-
-register_activation_hook( __FILE__, '\PRC\Platform\Collections\activate_prc_collections' );
-register_deactivation_hook( __FILE__, '\PRC\Platform\Collections\deactivate_prc_collections' );
 
 /**
  * Helper utilities

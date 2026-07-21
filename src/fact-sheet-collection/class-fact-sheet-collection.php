@@ -22,6 +22,20 @@ use WP_Error;
  */
 class Fact_Sheet_Collection {
 	/**
+	 * Object cache group for assembled collection render data.
+	 *
+	 * @var string
+	 */
+	public const CACHE_GROUP = 'prc_fact_sheet_collection';
+
+	/**
+	 * Cache TTL for assembled collection render data.
+	 *
+	 * @var int
+	 */
+	public const CACHE_TTL = HOUR_IN_SECONDS;
+
+	/**
 	 * Taxonomy
 	 *
 	 * @var string
@@ -60,6 +74,176 @@ class Fact_Sheet_Collection {
 		if ( null !== $loader ) {
 			$loader->add_action( 'init', $this, 'get_languages', 10 );
 			$loader->add_action( 'init', $this, 'block_init', 11 );
+			$loader->add_action( 'prc_platform_on_update', $this, 'clear_cache_on_update', 10, 1 );
+			$loader->add_action( 'prc_platform_on_publish', $this, 'clear_cache_on_update', 10, 1 );
+			$loader->add_action( 'set_object_terms', $this, 'clear_cache_on_term_assignment', 10, 6 );
+			$loader->add_action( 'edited_term', $this, 'clear_cache_on_term_edit', 10, 3 );
+		}
+	}
+
+	/**
+	 * Build the cache key for a fact-sheet render payload.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return string
+	 */
+	public static function get_cache_key( int $post_id ): string {
+		$visibility = is_user_logged_in() ? 'auth' : 'guest';
+		return 'fact_sheet_collection_' . $post_id . '_' . $visibility;
+	}
+
+	/**
+	 * Delete cached render data for a fact sheet.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return void
+	 */
+	public static function clear_cache_for_post( int $post_id ): void {
+		wp_cache_delete( 'fact_sheet_collection_' . $post_id . '_guest', self::CACHE_GROUP );
+		wp_cache_delete( 'fact_sheet_collection_' . $post_id . '_auth', self::CACHE_GROUP );
+	}
+
+	/**
+	 * Clear cache when a fact sheet is updated or first published.
+	 *
+	 * Also clears sibling fact sheets that embed shared collection / alt-language data.
+	 *
+	 * @hook prc_platform_on_update
+	 * @hook prc_platform_on_publish
+	 * @param object $post Extended WP_Post-like object from the pipeline.
+	 * @return void
+	 */
+	public function clear_cache_on_update( $post ): void {
+		// Pipeline passes stdClass from setup_extra_wp_post_object_fields(), not WP_Post.
+		if ( ! is_object( $post ) || empty( $post->ID ) || empty( $post->post_type ) || self::$post_type !== $post->post_type ) {
+			return;
+		}
+		$this->clear_related_collection_caches( (int) $post->ID );
+	}
+
+	/**
+	 * Clear cache when collection or language terms change on a fact sheet.
+	 *
+	 * @hook set_object_terms
+	 * @param int    $object_id  Object ID.
+	 * @param array  $terms      Term IDs.
+	 * @param array  $tt_ids     Term taxonomy IDs.
+	 * @param string $taxonomy   Taxonomy slug.
+	 * @param bool   $append     Whether terms were appended.
+	 * @param array  $old_tt_ids Old term taxonomy IDs.
+	 * @return void
+	 */
+	public function clear_cache_on_term_assignment( $object_id, $terms, $tt_ids, $taxonomy, $append, $old_tt_ids ): void {
+		unset( $terms, $tt_ids, $append );
+		if ( ! in_array( $taxonomy, array( self::$taxonomy, 'languages' ), true ) ) {
+			return;
+		}
+		$post = get_post( (int) $object_id );
+		if ( ! $post instanceof WP_Post || self::$post_type !== $post->post_type ) {
+			return;
+		}
+		$this->clear_related_collection_caches( (int) $post->ID );
+
+		// Invalidate former collection siblings when a fact sheet moves between terms.
+		if ( self::$taxonomy === $taxonomy && ! empty( $old_tt_ids ) ) {
+			foreach ( (array) $old_tt_ids as $tt_id ) {
+				$term = get_term_by( 'term_taxonomy_id', (int) $tt_id, self::$taxonomy );
+				if ( $term instanceof WP_Term ) {
+					$this->clear_caches_for_collection_branch( (int) $term->term_id );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Clear caches when a collection term is renamed or re-parented.
+	 *
+	 * @hook edited_term
+	 * @param int    $term_id  Term ID.
+	 * @param int    $tt_id    Term taxonomy ID.
+	 * @param string $taxonomy Taxonomy slug.
+	 * @return void
+	 */
+	public function clear_cache_on_term_edit( $term_id, $tt_id, $taxonomy ): void {
+		unset( $tt_id );
+		if ( self::$taxonomy !== $taxonomy ) {
+			return;
+		}
+		$this->clear_caches_for_collection_branch( (int) $term_id );
+	}
+
+	/**
+	 * Clear render caches for a fact sheet and siblings that share its collection branch.
+	 *
+	 * Cached payloads include parent/child term labels and alt-language links derived
+	 * from other posts in the same collection hierarchy.
+	 *
+	 * @param int $post_id Fact sheet post ID.
+	 * @return void
+	 */
+	private function clear_related_collection_caches( int $post_id ): void {
+		self::clear_cache_for_post( $post_id );
+
+		$terms = wp_get_post_terms( $post_id, self::$taxonomy );
+		if ( empty( $terms ) || is_wp_error( $terms ) ) {
+			return;
+		}
+
+		$collection_term = $terms[0];
+		if ( ! $collection_term instanceof WP_Term ) {
+			return;
+		}
+
+		$branch_root = $collection_term->parent ? (int) $collection_term->parent : (int) $collection_term->term_id;
+		$this->clear_caches_for_collection_branch( $branch_root );
+	}
+
+	/**
+	 * Clear render caches for all fact sheets under a collection term branch.
+	 *
+	 * @param int $term_id Collection term ID (parent or child).
+	 * @return void
+	 */
+	private function clear_caches_for_collection_branch( int $term_id ): void {
+		if ( $term_id <= 0 ) {
+			return;
+		}
+
+		$term = get_term( $term_id, self::$taxonomy );
+		if ( ! $term instanceof WP_Term ) {
+			return;
+		}
+
+		$branch_root = $term->parent ? (int) $term->parent : (int) $term->term_id;
+		$term_ids    = get_term_children( $branch_root, self::$taxonomy );
+		if ( is_wp_error( $term_ids ) ) {
+			$term_ids = array();
+		}
+		$term_ids[] = $branch_root;
+		$term_ids[] = (int) $term->term_id;
+		$term_ids   = array_values( array_unique( array_map( 'intval', $term_ids ) ) );
+
+		$posts = get_posts(
+			array(
+				'post_type'              => self::$post_type,
+				'post_status'            => 'any',
+				'posts_per_page'         => -1,
+				'fields'                 => 'ids',
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+				'tax_query'              => array(
+					array(
+						'taxonomy' => self::$taxonomy,
+						'field'    => 'term_id',
+						'terms'    => $term_ids,
+					),
+				),
+			)
+		);
+
+		foreach ( $posts as $id ) {
+			self::clear_cache_for_post( (int) $id );
 		}
 	}
 
@@ -244,6 +428,66 @@ class Fact_Sheet_Collection {
 	}
 
 	/**
+	 * Get assembled collection + alt-language data for render, with object cache.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return array|null
+	 */
+	public function get_render_collection_data( $post_id ) {
+		$post_id = (int) $post_id;
+		if ( $post_id <= 0 ) {
+			return null;
+		}
+
+		$use_cache = ! is_user_logged_in() && ! is_preview();
+		$cache_key = self::get_cache_key( $post_id );
+
+		if ( $use_cache ) {
+			$cached = wp_cache_get( $cache_key, self::CACHE_GROUP );
+			if ( false !== $cached && is_array( $cached ) ) {
+				return $cached;
+			}
+		}
+
+		$collection = $this->get_collection( $post_id );
+		if ( empty( $collection ) || ! isset( $collection['collection_term'] ) ) {
+			return null;
+		}
+
+		$collection_term    = $collection['collection_term'];
+		$alt_language_posts = $this->get_alt_language_posts( $collection_term->term_id, array( $post_id ) );
+		$alt_languages      = array();
+
+		foreach ( $alt_language_posts as $other_language_post ) {
+			if ( ! $other_language_post instanceof WP_Post ) {
+				continue;
+			}
+			$language_terms = wp_get_post_terms( $other_language_post->ID, 'languages' );
+			$language_term  = is_array( $language_terms ) ? array_shift( $language_terms ) : false;
+			if ( ! $language_term instanceof WP_Term ) {
+				continue;
+			}
+			$alt_languages[] = array(
+				'permalink' => get_permalink( $other_language_post->ID ),
+				'language'  => $language_term->name,
+			);
+		}
+
+		$payload = array(
+			'collection_term_id' => $collection_term->term_id,
+			'parent_term'        => $collection['parent_term'],
+			'child_terms'        => $collection['child_terms'],
+			'alt_languages'      => $alt_languages,
+		);
+
+		if ( $use_cache ) {
+			wp_cache_set( $cache_key, $payload, self::CACHE_GROUP, self::CACHE_TTL );
+		}
+
+		return $payload;
+	}
+
+	/**
 	 * Render block callback
 	 *
 	 * @param array  $attributes Attributes.
@@ -255,28 +499,25 @@ class Fact_Sheet_Collection {
 		if ( is_admin() ) {
 			return;
 		}
-		$context = $block->context;
-		// $post_id    = $context['postId'];
-		$post_id    = get_the_ID();
-		$collection = $this->get_collection( $post_id );
-		if ( ! $collection ) {
+		$post_id = get_the_ID();
+		$cached  = $this->get_render_collection_data( $post_id );
+		if ( null === $cached ) {
 			return;
 		}
-		do_action( 'qm/debug', 'Collection:' . print_r( $collection, true ) );
-		$collection_term    = $collection['collection_term'];
-		$parent_term        = $collection['parent_term'];
-		$child_terms        = $collection['child_terms'];
-		$alt_language_posts = $this->get_alt_language_posts( $collection_term->term_id, array( $post_id ) );
+
+		$collection_term_id = $cached['collection_term_id'];
+		$parent_term        = $cached['parent_term'];
+		$child_terms        = $cached['child_terms'];
 		$collection         = array(
 			'terms'           => array_map(
-				function ( $child_term ) use ( $collection_term ) {
+				function ( $child_term ) use ( $collection_term_id ) {
 					return wp_sprintf(
 						'<a href="%1$s" class="%2$s">%3$s</a>',
 						$child_term['link'],
 						\PRC\BlockUtils\classNames(
 							'wp-block-prc-block-fact-sheet-collection--term-link',
 							array(
-								'is-active' => $child_term['term_id'] === $collection_term->term_id,
+								'is-active' => $child_term['term_id'] === $collection_term_id,
 							)
 						),
 						$child_term['name'],
@@ -285,24 +526,14 @@ class Fact_Sheet_Collection {
 				$child_terms
 			),
 			'alt_languages'   => array_map(
-				function ( $other_language_post ) {
-					if ( ! $other_language_post instanceof WP_Post ) {
-						return;
-					}
-					$other_language_post_permalink = get_permalink( $other_language_post->ID );
-					$other_language_post_language = wp_get_post_terms( $other_language_post->ID, 'languages' );
-					$other_language_post_language = array_shift( $other_language_post_language );
-					if ( ! $other_language_post_language instanceof WP_Term ) {
-						return;
-					}
-					$other_language_post_language = $other_language_post_language->name;
+				function ( $alt_language ) {
 					return wp_sprintf(
 						'<a href="%1$s" class="wp-block-prc-block-fact-sheet-collection__term-link__alt-language-link">%2$s</a>',
-						$other_language_post_permalink,
-						$other_language_post_language,
+						$alt_language['permalink'],
+						$alt_language['language'],
 					);
 				},
-				$alt_language_posts
+				$cached['alt_languages']
 			),
 			'collection_name' => $parent_term['name'],
 			'collection_link' => $parent_term['link'],
