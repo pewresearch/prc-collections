@@ -140,7 +140,7 @@ class Content_Type {
 		$loader->add_action( 'init', $this, 'register_term_data_store' );
 		$loader->add_filter( 'default_wp_template_part_areas', $this, 'kicker_template_areas', 11, 1 );
 		$loader->add_action( 'pre_get_posts', $this, 'filter_self_reference_out', 100, 1 );
-		$loader->add_action( 'prc_platform_on_publish', $this, 'set_default_post_visibility', 10, 1 );
+		$loader->add_filter( 'prc_platform_pub_listing_default_visibility', $this, 'default_collections_visibility' );
 	}
 
 	/**
@@ -283,25 +283,22 @@ class Content_Type {
 	}
 
 	/**
-	 * Set default _post_visibility taxonomy term to 'hidden-on-index' for new collections posts.
+	 * Hide collections from the publications archive by default.
 	 *
-	 * @hook prc_platform_on_post_init
+	 * Applied by prc-publication-listing on post init when `_post_visibility`
+	 * is empty. Editors can uncheck the toggle to opt a collection into listings.
 	 *
-	 * @param WP_Post $post Post object.
+	 * @hook prc_platform_pub_listing_default_visibility
+	 *
+	 * @param mixed $defaults Map of post_type => term slug[].
+	 * @return mixed
 	 */
-	public function set_default_post_visibility( $post ) {
-		// Only for 'collections' post type.
-		if ( self::$post_object_name !== $post->post_type ) {
-			return;
+	public function default_collections_visibility( $defaults ) {
+		if ( ! is_array( $defaults ) ) {
+			return $defaults;
 		}
 
-		// Only set if no terms are set yet.
-		$current_terms = wp_get_object_terms( $post->ID, '_post_visibility', array( 'fields' => 'ids' ) );
-		if ( ! empty( $current_terms ) || is_wp_error( $current_terms ) ) {
-			return;
-		}
-
-		// Set the default term.
-		wp_set_object_terms( $post->ID, 'hidden-on-index', '_post_visibility', false );
+		$defaults[ self::$post_object_name ] = array( 'hidden-on-index' );
+		return $defaults;
 	}
 }
