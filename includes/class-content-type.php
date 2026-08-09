@@ -140,6 +140,7 @@ class Content_Type {
 		$loader->add_action( 'init', $this, 'register_term_data_store' );
 		$loader->add_filter( 'default_wp_template_part_areas', $this, 'kicker_template_areas', 11, 1 );
 		$loader->add_action( 'pre_get_posts', $this, 'filter_self_reference_out', 100, 1 );
+		$loader->add_filter( 'prc_platform_pub_listing_default_args', $this, 'scope_pub_listing_to_collection_on_singular', 20, 2 );
 		$loader->add_filter( 'prc_platform_pub_listing_default_visibility', $this, 'default_collections_visibility' );
 	}
 
@@ -280,6 +281,61 @@ class Content_Type {
 		}
 		$existing_not_in[] = $queried_object->ID;
 		$query->set( 'post__not_in', array_unique( $existing_not_in ) );
+	}
+
+	/**
+	 * Scope publication listing Query blocks to the current collection on singular collection URLs.
+	 *
+	 * Collection templates use a non-inherited core/query (`inherit: false`). Those queries are built
+	 * via `query_loop_block_query_vars` and never receive `isPubListingQuery` on the main loop, so
+	 * {@see filter_self_reference_out()} does not run. Without this filter, the listing is not limited
+	 * to the collection term and block pagination (`query-{id}-page`) has no stable result set.
+	 *
+	 * @hook prc_platform_pub_listing_default_args
+	 *
+	 * @param array    $args  Query arguments.
+	 * @param WP_Query $query Query instance when merged from the main loop; null for block/REST paths.
+	 * @return array
+	 */
+	public function scope_pub_listing_to_collection_on_singular( $args, $query ) {
+		if ( ! is_array( $args ) ) {
+			$args = array();
+		}
+		if ( ! is_singular( self::$post_object_name ) ) {
+			return $args;
+		}
+		$queried_object = get_queried_object();
+		if ( ! is_a( $queried_object, 'WP_Post' ) || self::$post_object_name !== $queried_object->post_type ) {
+			return $args;
+		}
+		$collection_term = \PRC\TDS\get_related_term( $queried_object );
+		if ( ! $collection_term ) {
+			return $args;
+		}
+
+		$collection_clause = array(
+			'taxonomy' => self::$taxonomy_object_name,
+			'field'    => 'term_id',
+			'terms'    => $collection_term->term_id,
+		);
+
+		$existing_tax = $args['tax_query'] ?? array();
+		if ( ! empty( $existing_tax ) ) {
+			$args['tax_query'] = array(
+				'relation' => 'AND',
+				$existing_tax,
+				$collection_clause,
+			);
+		} else {
+			$args['tax_query'] = array( $collection_clause );
+		}
+
+		$exclude_ids          = $args['post__not_in'] ?? array();
+		$exclude_ids          = is_array( $exclude_ids ) ? $exclude_ids : array( $exclude_ids );
+		$exclude_ids[]        = $queried_object->ID;
+		$args['post__not_in'] = array_values( array_unique( array_map( 'absint', $exclude_ids ) ) );
+
+		return $args;
 	}
 
 	/**
