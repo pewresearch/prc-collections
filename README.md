@@ -1,5 +1,7 @@
 # PRC Collections
 
+> Canonical docs: [docs/plugins/prc-collections/](../../docs/plugins/prc-collections/)
+
 Registers a hybrid `collections` post type and `collection` taxonomy that allows editors to curate groups of PRC content sharing common themes, research initiatives, or special projects (e.g., the Religious Landscape Study). The post type and taxonomy are linked via [`prc/term-data-store`](https://github.com/pewresearch/term-data-store) (namespace `PRC\TDS`), so each collection post has a corresponding taxonomy term used to tag associated content.
 
 ## What it does

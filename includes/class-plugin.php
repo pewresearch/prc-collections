@@ -72,6 +72,7 @@ class Plugin {
 
 		// Load custom post type class.
 		require_once plugin_dir_path( __DIR__ ) . '/includes/class-content-type.php';
+		require_once plugin_dir_path( __DIR__ ) . '/includes/class-admin-dataview-lists.php';
 
 		// Initialize the loader.
 		$this->loader = new Loader();
@@ -84,6 +85,7 @@ class Plugin {
 	 */
 	private function init_dependencies() {
 		new Content_Type( $this->get_loader() );
+		new Admin_Dataview_Lists( $this->get_loader() );
 
 		wp_register_block_metadata_collection(
 			plugin_dir_path( __DIR__ ) . 'build',
