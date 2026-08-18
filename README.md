@@ -37,8 +37,8 @@ Registers a hybrid `collections` post type and `collection` taxonomy that allows
 
 | Hook | Direction | Description |
 |------|-----------|-------------|
-| `init` (priority 5) | Action | Registers `prc-collections` post type support for `post` and `feature`; adds `prc-bylines`, `prc-art-direction`, `prc-sitemap`, and `prc-publication-listing` support to the `collections` post type |
-| `init` (priority 10) | Action | Registers the `collections` post type, `collection` taxonomy, `prc/term-data-store` relationship, and kicker post meta |
+| `init` (priority 5) | Action | Registers `prc-collections` post type support for `post` and `feature`; adds `prc-bylines`, `prc-art-direction`, `prc-sitemap`, and `prc-publication-listing` support to the `collections` post type; registers the `collections` post type and kicker post meta so later `init` meta scanners can discover it |
+| `init` (priority 20) | Action | Registers the `collection` taxonomy and `prc/term-data-store` relationship after other PRC CPTs register on default `init`. |
 | `default_wp_template_part_areas` (priority 11) | Filter | Adds a `kicker` area to the Site Editor template part area list |
 | `pre_get_posts` (priority 100) | Action | On publication listing queries for a `collections` page, injects a `tax_query` for the mapped collection term and excludes the collection post itself from results |
 | `prc_platform_on_publish` (priority 10) | Action | Sets `hidden-on-index` as the `_post_visibility` term for newly published collection posts that have no existing visibility terms |

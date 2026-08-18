@@ -137,10 +137,12 @@ class Content_Type {
 	 */
 	public function __construct( $loader ) {
 		$loader->add_action( 'init', $this, 'register_default_post_type_support', 5 );
-		$loader->add_action( 'init', $this, 'register_term_data_store' );
+		$loader->add_action( 'init', $this, 'register_post_object', 5 );
+		$loader->add_action( 'init', $this, 'register_term_data_store', 20 );
 		$loader->add_filter( 'default_wp_template_part_areas', $this, 'kicker_template_areas', 11, 1 );
 		$loader->add_action( 'pre_get_posts', $this, 'filter_self_reference_out', 100, 1 );
 		$loader->add_filter( 'prc_platform_pub_listing_default_args', $this, 'scope_pub_listing_to_collection_on_singular', 20, 2 );
+		$loader->add_filter( 'prc_platform_pub_listing_visibility_terms', $this, 'filter_listing_visibility_terms', 10, 3 );
 		$loader->add_filter( 'prc_platform_pub_listing_default_visibility', $this, 'default_collections_visibility' );
 	}
 
@@ -181,25 +183,33 @@ class Content_Type {
 	}
 
 	/**
-	 * Register the Collections post type and taxonomy and establish a relationship between them.
-	 * Additionally, register the kicker meta.
+	 * Register the Collections post type and kicker meta.
+	 *
+	 * Runs at priority 5 so plugins that bind per-type meta on default
+	 * `init` (or at 11) still see `collections` in `get_post_types()`.
+	 *
+	 * @hook init
+	 */
+	public function register_post_object() {
+		register_post_type( self::$post_object_name, self::$post_object_args );
+		$this->register_kicker_meta();
+	}
+
+	/**
+	 * Register the collection taxonomy and establish a relationship with the post type.
+	 *
+	 * Runs at priority 20 so opted-in CPTs (feature, fact-sheet, quiz, …)
+	 * exist before get_enabled_post_types() reads them.
 	 *
 	 * @hook init
 	 */
 	public function register_term_data_store() {
-		// Register the post type.
-		register_post_type( self::$post_object_name, self::$post_object_args );
-
-		// Register the taxonomy.
 		$enabled_post_types = self::get_enabled_post_types();
 		register_taxonomy( self::$taxonomy_object_name, $enabled_post_types, self::$taxonomy_object_args );
 
 		// Establish a relationship between the post type and taxonomy.
 		// Disable automatic permalink rewrites since collections handles its own permalink structure.
 		\PRC\TDS\add_relationship( self::$post_object_name, self::$taxonomy_object_name, false );
-
-		// Register the kicker meta.
-		$this->register_kicker_meta();
 	}
 
 	/**
@@ -336,6 +346,43 @@ class Content_Type {
 		$args['post__not_in'] = array_values( array_unique( array_map( 'absint', $exclude_ids ) ) );
 
 		return $args;
+	}
+
+	/**
+	 * @param string[] $terms Visibility slugs from Query::get_visibility_terms().
+	 * @return string[]
+	 */
+	public static function skip_index_visibility_for_current_request( array $terms ): array {
+		$on_collection_listing = is_singular( self::$post_object_name ) || is_tax( self::$taxonomy_object_name );
+		if ( ! $on_collection_listing ) {
+			return $terms;
+		}
+
+		if ( in_array( 'hidden-on-search', $terms, true ) ) {
+			return $terms;
+		}
+
+		if ( in_array( 'hidden-on-index', $terms, true ) ) {
+			return array();
+		}
+
+		return $terms;
+	}
+
+	/**
+	 * @hook prc_platform_pub_listing_visibility_terms
+	 *
+	 * @param mixed $terms Visibility slugs.
+	 * @param mixed $args  Query args.
+	 * @param mixed $query Query object or null.
+	 * @return string[]
+	 */
+	public function filter_listing_visibility_terms( $terms, $args, $query ) {
+		if ( ! is_array( $terms ) ) {
+			return array();
+		}
+
+		return self::skip_index_visibility_for_current_request( $terms );
 	}
 
 	/**

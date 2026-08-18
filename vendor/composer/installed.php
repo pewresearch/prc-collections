@@ -3,7 +3,7 @@
         'name' => 'pewresearch/prc-collections',
         'pretty_version' => 'dev-trunk',
         'version' => 'dev-trunk',
-        'reference' => '65cf6315bce9d0d43d842ecf18522437b08c3e4a',
+        'reference' => 'e88178a34cba82d008b11862a38d008b759664cf',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -22,7 +22,7 @@
         'pewresearch/prc-collections' => array(
             'pretty_version' => 'dev-trunk',
             'version' => 'dev-trunk',
-            'reference' => '65cf6315bce9d0d43d842ecf18522437b08c3e4a',
+            'reference' => 'e88178a34cba82d008b11862a38d008b759664cf',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
