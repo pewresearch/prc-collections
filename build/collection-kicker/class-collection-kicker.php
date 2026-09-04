@@ -69,7 +69,12 @@ class Collection_Kicker {
 		$cache_key   = 'collection_kicker_data_' . $collection_term->term_id;
 		$cached_data = wp_cache_get( $cache_key, 'prc_collection_kicker' );
 
-		if ( false === $cached_data || empty( $cached_data ) ) {
+		$found_part = null;
+		if ( is_array( $cached_data ) && ! empty( $cached_data['found_part_id'] ) ) {
+			$found_part = get_post( (int) $cached_data['found_part_id'] );
+		}
+
+		if ( ! $found_part instanceof \WP_Post ) {
 			$tds_post_id = get_term_meta( $collection_term->term_id, 'tds_post_id', true );
 			if ( empty( $tds_post_id ) ) {
 				return;
@@ -95,15 +100,12 @@ class Collection_Kicker {
 			}
 
 			$cached_data = array(
-				'tds_post_id'     => $tds_post_id,
-				'collection_post' => $collection_post,
-				'kicker_slug'     => $kicker_slug,
-				'found_part'      => $found_part,
+				'tds_post_id'   => $tds_post_id,
+				'kicker_slug'   => $kicker_slug,
+				'found_part_id' => (int) $found_part->ID,
 			);
 			wp_cache_set( $cache_key, $cached_data, 'prc_collection_kicker', HOUR_IN_SECONDS );
 		}
-
-		$found_part = $cached_data['found_part'];
 
 		return do_blocks( $found_part->post_content );
 	}
