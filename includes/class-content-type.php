@@ -209,7 +209,7 @@ class Content_Type {
 
 		// Establish a relationship between the post type and taxonomy.
 		// Disable automatic permalink rewrites since collections handles its own permalink structure.
-		\PRC\TDS\add_relationship( self::$post_object_name, self::$taxonomy_object_name, false );
+		\PRC\Primitives\TDS\add_relationship( self::$post_object_name, self::$taxonomy_object_name, false );
 	}
 
 	/**
@@ -266,7 +266,7 @@ class Content_Type {
 		if ( ! is_a( $queried_object, 'WP_Post' ) || $queried_object->post_type !== self::$post_object_name ) {
 			return;
 		}
-		$collection_term = \PRC\TDS\get_related_term( $queried_object );
+		$collection_term = \PRC\Primitives\TDS\get_related_term( $queried_object );
 		if ( ! $collection_term ) {
 			return;
 		}
@@ -318,7 +318,7 @@ class Content_Type {
 		if ( ! is_a( $queried_object, 'WP_Post' ) || self::$post_object_name !== $queried_object->post_type ) {
 			return $args;
 		}
-		$collection_term = \PRC\TDS\get_related_term( $queried_object );
+		$collection_term = \PRC\Primitives\TDS\get_related_term( $queried_object );
 		if ( ! $collection_term ) {
 			return $args;
 		}
