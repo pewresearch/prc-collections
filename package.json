@@ -1,6 +1,6 @@
 {
 	"name": "@prc/collections",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"description": "Collections is a hybrid post and taxonomy type that allows for curation of Pew Research Center content that share common themes, topics, research initiatives, special projects or grants, purpose built for PRC Platform.",
 	"scripts": {
 		"build": "npm run build:blocks && npm run build:inspector-panel",
