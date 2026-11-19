@@ -7,7 +7,7 @@ Registers a hybrid `collections` post type and `collection` taxonomy that allows
 ## What it does
 
 - Registers a hierarchical `collections` custom post type with archive support, full REST API exposure, and a `prc-block/grid-controller` default block template
-- Registers a hierarchical `collection` taxonomy applied to all public post types that declare `prc-collections` support (initially `post` and `feature`)
+- Registers a hierarchical `collection` taxonomy applied to all public post types that declare `prc-collections` support (`post`, `feature`, and `dataset`, plus any other type that opts in)
 - Establishes a `prc/primitives` term data store relationship between the `collections` post type and the `collection` taxonomy — each collection post maps to a term, enabling content to be tagged and queried by collection
 - Registers a `kicker_pattern_slug` post meta field on collection posts, pointing to a Site Editor template part used as the collection's visual "kicker" (bug/label)
 - Adds a `kicker` template part area to the Site Editor so kicker template parts can be managed separately from other template parts
